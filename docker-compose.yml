@@ -1,0 +1,51 @@
+name: link-shortener
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: linkshort
+      POSTGRES_USER: linkshort
+      POSTGRES_PASSWORD: linkshort
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U linkshort -d linkshort"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  app:
+    build: .
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      BASE_URL: ${BASE_URL:-http://localhost:8000}
+      SECRET_KEY: ${SECRET_KEY:-insecure-development-secret-change-me}
+      IP_HASH_PEPPER: ${IP_HASH_PEPPER:-insecure-development-pepper}
+      DATABASE_URL: postgresql+psycopg://linkshort:linkshort@db:5432/linkshort
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      TRUSTED_PROXY: ${TRUSTED_PROXY:-false}
+      RATE_LIMIT_CREATE_PER_MINUTE: ${RATE_LIMIT_CREATE_PER_MINUTE:-20}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  pgdata:
