@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Link Shortener — короткие ссылки с аналитикой</title>
+    <meta
+      name="description"
+      content="Учебный сервис коротких ссылок: аккаунты, свои алиасы, срок действия, защита паролем и статистика переходов."
+    />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔗</text></svg>" />
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/">
+        <span class="brand-mark" aria-hidden="true">🔗</span>
+        <span>Link Shortener</span>
+      </a>
+      <nav class="topnav">
+        <a href="/docs" target="_blank" rel="noreferrer">API docs</a>
+        <div id="account" class="account">
+          <button id="login-button" class="ghost" type="button">Войти</button>
+        </div>
+      </nav>
+    </header>
+
+    <main class="page">
+      <section class="hero">
+        <p class="eyebrow">учебный backend-проект · FastAPI + PostgreSQL</p>
+        <h1>Длинные ссылки — коротко.<br />Переходы — понятно.</h1>
+        <p class="lead">
+          Вставьте адрес, получите короткий код и смотрите, сколько людей пришло,
+          откуда и с какого устройства.
+        </p>
+      </section>
+
+      <section class="card compose" aria-labelledby="compose-title">
+        <h2 id="compose-title">Сократить ссылку</h2>
+        <form id="create-form" autocomplete="off" novalidate>
+          <label class="field">
+            <span>Длинная ссылка</span>
+            <input
+              id="url-input"
+              name="url"
+              type="url"
+              required
+              placeholder="https://example.com/very/long/path?utm_source=newsletter"
+            />
+          </label>
+
+          <details class="advanced">
+            <summary>Дополнительно: свой код, срок действия, пароль</summary>
+            <div class="grid-3">
+              <label class="field">
+                <span>Свой код</span>
+                <div class="input-prefix">
+                  <span id="origin-label">/</span>
+                  <input id="code-input" name="custom_code" type="text" placeholder="my-resume" />
+                </div>
+              </label>
+              <label class="field">
+                <span>Истекает</span>
+                <input id="expires-input" name="expires_at" type="datetime-local" />
+              </label>
+              <label class="field">
+                <span>Пароль</span>
+                <input
+                  id="password-input"
+                  name="password"
+                  type="password"
+                  minlength="4"
+                  placeholder="необязательно"
+                />
+              </label>
+            </div>
+          </details>
+
+          <div class="actions">
+            <button class="primary" type="submit" id="create-button">Сократить</button>
+            <p class="hint" id="create-hint">
+              20 ссылок в минуту с одного адреса. Без входа ссылка останется анонимной.
+            </p>
+          </div>
+        </form>
+
+        <article id="result" class="result hidden" aria-live="polite">
+          <div class="result-info">
+            <p class="result-label">Готово</p>
+            <a id="result-short" class="result-link" href="#" target="_blank" rel="noreferrer"></a>
+            <p id="result-original" class="muted"></p>
+            <p id="result-flags" class="flags"></p>
+            <div class="row">
+              <button id="copy-button" class="secondary" type="button">Скопировать</button>
+              <a id="result-open" class="secondary" href="#" target="_blank" rel="noreferrer">Открыть</a>
+            </div>
+          </div>
+          <img id="result-qr" class="qr" alt="QR-код короткой ссылки" width="144" height="144" />
+        </article>
+      </section>
+
+      <section id="dashboard" class="card hidden" aria-labelledby="dashboard-title">
+        <div class="section-head">
+          <h2 id="dashboard-title">Мои ссылки</h2>
+          <button id="refresh-button" class="ghost small" type="button">Обновить</button>
+        </div>
+        <div class="table-wrap">
+          <table class="links-table">
+            <thead>
+              <tr>
+                <th>Короткая</th>
+                <th>Оригинал</th>
+                <th class="num">Переходы</th>
+                <th>Создана</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="links-body"></tbody>
+          </table>
+        </div>
+        <p id="links-empty" class="muted hidden">Пока нет ссылок — создайте первую выше.</p>
+        <div class="pager">
+          <button id="prev-page" class="ghost small" type="button">← Назад</button>
+          <span id="page-info" class="muted"></span>
+          <button id="next-page" class="ghost small" type="button">Вперёд →</button>
+        </div>
+      </section>
+
+      <section class="features">
+        <article>
+          <h3>Аналитика</h3>
+          <p>Всего переходов, уникальные посетители, разбивка по дням, источникам и устройствам.</p>
+        </article>
+        <article>
+          <h3>Аккаунты</h3>
+          <p>JWT, bcrypt, личный кабинет. Чужие ссылки недоступны ни на чтение, ни на удаление.</p>
+        </article>
+        <article>
+          <h3>Аккуратность</h3>
+          <p>Валидация URL, защита от циклов, лимиты запросов, кэш в Redis и понятные ошибки.</p>
+        </article>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>Link Shortener · MIT</span>
+      <a href="/docs" target="_blank" rel="noreferrer">Swagger UI</a>
+    </footer>
+
+    <dialog id="auth-dialog" class="dialog">
+      <form id="auth-form" method="dialog" novalidate>
+        <h2 id="auth-title">Вход</h2>
+        <div class="tabs" role="tablist">
+          <button id="tab-login" class="tab active" type="button" role="tab">Вход</button>
+          <button id="tab-register" class="tab" type="button" role="tab">Регистрация</button>
+        </div>
+        <label class="field">
+          <span>E-mail</span>
+          <input id="auth-email" type="email" required autocomplete="email" />
+        </label>
+        <label class="field">
+          <span>Пароль</span>
+          <input
+            id="auth-password"
+            type="password"
+            required
+            minlength="8"
+            autocomplete="current-password"
+          />
+        </label>
+        <p class="hint">Пароль хранится только в виде bcrypt-хеша.</p>
+        <div class="row end">
+          <button class="ghost" type="button" id="auth-cancel">Отмена</button>
+          <button class="primary" type="submit" id="auth-submit">Войти</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="stats-dialog" class="dialog wide">
+      <div class="stats">
+        <div class="section-head">
+          <h2>Статистика</h2>
+          <button class="ghost small" type="button" id="stats-close">Закрыть</button>
+        </div>
+        <p id="stats-link" class="muted"></p>
+        <div class="stat-grid">
+          <div class="stat"><span id="stat-total">0</span><small>переходов</small></div>
+          <div class="stat"><span id="stat-unique">0</span><small>уникальных</small></div>
+          <div class="stat"><span id="stat-last">—</span><small>последний</small></div>
+        </div>
+        <h3>По дням</h3>
+        <div id="stats-days" class="bars" aria-hidden="true"></div>
+        <div class="grid-2">
+          <div>
+            <h3>Источники</h3>
+            <ul id="stats-referers" class="list"></ul>
+          </div>
+          <div>
+            <h3>Устройства</h3>
+            <ul id="stats-devices" class="list"></ul>
+          </div>
+        </div>
+      </div>
+    </dialog>
+
+    <div id="toasts" class="toasts" aria-live="polite"></div>
+
+    <script src="/static/app.js" defer></script>
+  </body>
+</html>
