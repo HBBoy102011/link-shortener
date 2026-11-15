@@ -1,10 +1,16 @@
 # Link Shortener
 
+[![CI](https://github.com/HBBoy102011/link-shortener/actions/workflows/ci.yml/badge.svg)](https://github.com/HBBoy102011/link-shortener/actions/workflows/ci.yml)
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/HBBoy102011/link-shortener)
 
 Сервис коротких ссылок с аналитикой переходов, аккаунтами и небольшим веб-дашбордом.
 Учебный backend-проект для портфолио: FastAPI, PostgreSQL, SQLAlchemy + Alembic, JWT, Redis,
 pytest, Docker и GitHub Actions.
+
+**Живая демонстрация:** <https://link-shortener-5oz9.onrender.com> · **Swagger:** [/docs](https://link-shortener-5oz9.onrender.com/docs)
+
+> Бесплатный инстанс Render засыпает после 15 минут простоя: первый запрос может
+> занять до минуты, дальше сервис отвечает быстро.
 
 ![Дашборд со списком ссылок](docs/dashboard.png)
 
@@ -353,7 +359,9 @@ black --check .
 
 Публичная демонстрация:
 
-> **Demo:** _будет добавлена после публикации_
+> **Demo:** <https://link-shortener-5oz9.onrender.com>
+> **Swagger:** <https://link-shortener-5oz9.onrender.com/docs>
+> **Health:** <https://link-shortener-5oz9.onrender.com/api/health>
 
 ## Ограничения и следующие шаги
 
