@@ -1,0 +1,40 @@
+# Render Blueprint: one click creates the database, the web service and all
+# secrets.  Deploy with https://render.com/deploy?repo=<repo-url>
+#
+# Free plan notes:
+# - the web service sleeps after 15 minutes without traffic and wakes on the
+#   next request (a few seconds of cold start);
+# - the free PostgreSQL instance is removed by Render after 30 days.  For a
+#   long-lived demo, change both plans to "starter" (paid).
+
+databases:
+  - name: link-shortener-db
+    databaseName: linkshort
+    user: linkshort
+    plan: free
+    region: frankfurt
+    postgresMajorVersion: "16"
+
+services:
+  - type: web
+    name: link-shortener
+    runtime: docker
+    plan: free
+    region: frankfurt
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      # BASE_URL is derived from RENDER_EXTERNAL_URL, so no manual step is
+      # needed after the first deploy.
+      - key: SECRET_KEY
+        generateValue: true
+      - key: IP_HASH_PEPPER
+        generateValue: true
+      - key: TRUSTED_PROXY
+        value: "true"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: link-shortener-db
+          property: connectionString

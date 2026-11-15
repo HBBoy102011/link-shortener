@@ -8,6 +8,7 @@ placeholder values.
 
 from __future__ import annotations
 
+import os
 from functools import lru_cache
 from typing import Literal
 from urllib.parse import urlparse
@@ -21,6 +22,17 @@ INSECURE_PEPPER = "insecure-development-pepper"
 
 #: Environment in which placeholder secrets are tolerated.
 DEV_ENVIRONMENTS = {"development", "test"}
+
+
+def default_base_url() -> str:
+    """Return the public URL, preferring the host assigned by the platform.
+
+    Render (and similar PaaS providers) inject the public origin instead of
+    asking for it up front, which keeps the blueprint a one-click deploy.
+    An explicit ``BASE_URL`` still wins, because environment variables take
+    precedence over field defaults.
+    """
+    return os.environ.get("RENDER_EXTERNAL_URL", "http://localhost:8000")
 
 
 class Settings(BaseSettings):
@@ -38,7 +50,7 @@ class Settings(BaseSettings):
     app_version: str = "1.0.0"
     environment: Literal["development", "production", "test"] = "development"
     debug: bool = False
-    base_url: str = "http://localhost:8000"
+    base_url: str = Field(default_factory=default_base_url)
 
     # Security
     secret_key: str = INSECURE_SECRET

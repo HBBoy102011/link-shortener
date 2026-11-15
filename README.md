@@ -1,5 +1,7 @@
 # Link Shortener
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/HBBoy102011/link-shortener)
+
 Сервис коротких ссылок с аналитикой переходов, аккаунтами и небольшим веб-дашбордом.
 Учебный backend-проект для портфолио: FastAPI, PostgreSQL, SQLAlchemy + Alembic, JWT, Redis,
 pytest, Docker и GitHub Actions.
@@ -322,16 +324,34 @@ black --check .
 
 ## Деплой
 
-Проект полностью контейнеризован, поэтому подходит Render, Railway, Fly.io или VPS.
+### Render (один клик)
+
+В репозитории лежит `render.yaml` — Blueprint, который создаёт PostgreSQL 16,
+веб-сервис из `Dockerfile` и генерирует `SECRET_KEY` и `IP_HASH_PEPPER`.
+Публичный адрес подставляется автоматически из `RENDER_EXTERNAL_URL`.
+
+1. Откройте <https://render.com/deploy> и выберите этот репозиторий
+   (или нажмите кнопку **Deploy to Render** в шапке README).
+2. Подтвердите Blueprint — Render создаст базу и сервис, дождётся `/api/health`.
+3. Готово: приложение доступно на `https://<service>.onrender.com`, Swagger — на `/docs`.
+
+Бесплатный план Render усыпляет сервис после 15 минут простоя (первый запрос
+после паузы занимает несколько секунд) и удаляет бесплатную базу через 30 дней.
+Для долгой демонстрации поменяйте `plan: free` на `plan: starter` в `render.yaml`.
+
+### Любой другой хостинг
+
+Проект полностью контейнеризован, поэтому подходит Railway, Fly.io, Koyeb или VPS.
 
 1. Создайте PostgreSQL (и, по желанию, Redis) у провайдера.
 2. Задайте переменные окружения: `ENVIRONMENT=production`, `BASE_URL=https://your-domain`,
    `SECRET_KEY`, `IP_HASH_PEPPER`, `DATABASE_URL`, при необходимости `REDIS_URL`.
-3. Команда релиза: `alembic upgrade head`. Команда запуска: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`.
+3. Команда релиза: `alembic upgrade head`. Контейнер уже применяет миграции перед
+   стартом и слушает `$PORT` (по умолчанию 8000).
 4. За прокси включите `TRUSTED_PROXY=true`, чтобы статистика видела реальные IP.
-5. Для Fly.io/Render достаточно `Dockerfile`; для VPS — `docker compose up -d`.
+5. Для Fly.io/Railway достаточно `Dockerfile`; для VPS — `docker compose up -d`.
 
-После деплоя добавьте публичную ссылку сюда:
+Публичная демонстрация:
 
 > **Demo:** _будет добавлена после публикации_
 
