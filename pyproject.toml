@@ -15,6 +15,9 @@ ignore = ["B008"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# Make ``import app`` work no matter whether pytest is started as
+# ``pytest`` or ``python -m pytest`` (CI uses the former).
+pythonpath = ["."]
 addopts = "-q --strict-markers"
 filterwarnings = [
     "error::DeprecationWarning:app.*",
