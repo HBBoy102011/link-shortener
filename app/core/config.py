@@ -93,6 +93,21 @@ class Settings(BaseSettings):
         """Treat blank ``REDIS_URL`` as "use the in-process cache"."""
         return value.strip()
 
+    @field_validator("database_url")
+    @classmethod
+    def _force_psycopg_driver(cls, value: str) -> str:
+        """Pin the psycopg 3 driver whatever scheme a platform supplies.
+
+        Render, Railway and Heroku hand out ``postgresql://`` (sometimes
+        ``postgres://``) URLs without a driver name.  Without one, SQLAlchemy
+        2.0 picks psycopg2, which this project does not install, and rejects
+        ``postgres://`` outright, so the scheme is normalised here.
+        """
+        for prefix in ("postgres://", "postgresql://"):
+            if value.startswith(prefix):
+                return "postgresql+psycopg://" + value.split("://", 1)[1]
+        return value
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def _split_origins(cls, value: object) -> object:

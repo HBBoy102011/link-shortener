@@ -62,6 +62,39 @@ jobs:
       - name: Apply migrations to PostgreSQL
         run: alembic upgrade head
 
+      - name: Check migrations match the models
+        run: alembic check
+
+      - name: Smoke test the running app
+        run: |
+          uvicorn app.main:app --port 8000 > uvicorn.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+
+          for _ in $(seq 1 20); do
+            if curl -fsS --connect-timeout 1 --max-time 2 http://127.0.0.1:8000/api/health > health.json 2>/dev/null; then break; fi
+            if ! kill -0 "$server_pid" 2>/dev/null; then break; fi
+            sleep 1
+          done
+
+          if [ ! -s health.json ]; then
+            echo "::error::the app did not become healthy"
+            cat uvicorn.log
+            exit 1
+          fi
+          cat health.json
+          python -c 'import json; d = json.load(open("health.json")); assert d["status"] == "ok" and d["database"] == "ok", d'
+
+          payload='{"url":"https://example.com/ci-smoke?from=ci"}'
+          code=$(curl -fsS --max-time 10 -X POST http://127.0.0.1:8000/api/links -H 'Content-Type: application/json' -d "$payload" | python -c 'import json, sys; print(json.load(sys.stdin)["code"])')
+          echo "created /$code"
+
+          status=$(curl -s --max-time 5 -o /dev/null -w '%{http_code}' "http://127.0.0.1:8000/$code")
+          location=$(curl -s --max-time 5 -o /dev/null -w '%{redirect_url}' "http://127.0.0.1:8000/$code")
+          echo "GET /$code -> $status, location: $location"
+          test "$status" = "302"
+          test "$location" = "https://example.com/ci-smoke?from=ci"
+
       - name: Run tests with coverage
         run: pytest --cov=app --cov-report=term-missing --cov-report=xml --cov-fail-under=70
 
@@ -72,3 +105,13 @@ jobs:
           name: coverage
           path: coverage.xml
           if-no-files-found: ignore
+
+  docker:
+    name: Build the deploy image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Build the image Render runs
+        run: docker build -t link-shortener:ci .

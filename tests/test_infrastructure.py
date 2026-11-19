@@ -118,3 +118,21 @@ def test_production_rejects_placeholder_secrets() -> None:
     )
     assert settings_ok.is_production
     assert settings_ok.short_url("abc") == "https://links.example.com/abc"
+
+
+def test_database_url_is_pinned_to_psycopg3() -> None:
+    """Platform-supplied PostgreSQL URLs keep working with psycopg 3 only."""
+    from app.core.config import Settings
+
+    for raw in (
+        "postgres://user:secret@db:5432/links",
+        "postgresql://user:secret@db:5432/links",
+    ):
+        settings = Settings(database_url=raw)
+        assert settings.database_url == "postgresql+psycopg://user:secret@db:5432/links"
+
+    explicit = Settings(database_url="postgresql+psycopg2://user:secret@db/links")
+    assert explicit.database_url == "postgresql+psycopg2://user:secret@db/links"
+
+    sqlite = Settings(database_url="sqlite:///./links.db")
+    assert sqlite.database_url == "sqlite:///./links.db"
